@@ -53,7 +53,9 @@
     .section-title .hint {font-size:10px;color:#77777c;letter-spacing:.04em;text-transform:uppercase;}
     .branches {animation:reveal .7s .10s ease both;}
     .branch-list {display:grid;gap:10px;}
-    .branch-card {display:flex;flex-direction:row;align-items:center;gap:13px;padding:17px 17px 19px;border:1px solid var(--border);border-radius:13px;background:var(--surface);}
+    .branch-card {display:flex;flex-direction:row;align-items:center;gap:13px;padding:17px 17px 19px;border:1px solid var(--border);border-radius:13px;background:var(--surface);color:var(--text);text-decoration:none;cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .15s ease;}
+    .branch-card:hover {border-color:#8c2327;background:#221719;}
+    .branch-card:focus-visible {outline:2px solid var(--accent-soft);outline-offset:3px;}
     .branch-location {display:grid;place-items:center;align-self:center;flex:0 0 44px;width:44px;height:44px;color:var(--accent-soft);}
     .branch-location svg {display:block;width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
     .branch-copy {flex:1;min-width:0;text-align:right;}
@@ -116,20 +118,20 @@
     <section class="branches" aria-labelledby="branches-heading">
       <div class="section-title" dir="rtl"><h2 class="kurdish" id="branches-heading">تایێن مە</h2><span class="hint">OUR BRANCHES</span></div>
       <div class="branch-list">
-        <article class="branch-card" dir="rtl">
+        <a class="branch-card" dir="rtl" href="https://www.google.com/maps?q=36.9666485%2C43.1700797&amp;z=18" data-map-query="Milla Jan Bazar, باگێرا، جادا سەرەکی، دهوك، العراق" data-map-coordinates="36.9666485,43.1700797" data-google-maps-url="https://maps.app.goo.gl/Af3LnCV4f5mTm5Pq5" data-map-label="Milla Jan Bazar - Baghera" target="_blank" rel="noopener noreferrer" aria-label="ڤەکرنا نەخشەیێ: تایێ ئێکێ">
           <span class="branch-location" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
           <div class="branch-copy kurdish">
             <h3>تایێ ئێکێ</h3>
             <p class="branch-address">باگێرا - جادا سەرەکی</p>
           </div>
-        </article>
-        <article class="branch-card" dir="rtl">
+        </a>
+        <a class="branch-card" dir="rtl" href="https://www.google.com/maps/place/36.8737905,42.9549243/@36.8737905,42.9549243,18z" data-map-query="Milla Jan Bazar, زەریلاند، بەرامبەر مزگەفتا صباح ملحم، دهوك، العراق" data-map-coordinates="36.8737905,42.9549243" data-google-maps-url="https://maps.app.goo.gl/fHY1fEkZvAU4gEXu7" data-map-label="Milla Jan Bazar - Dohuk" target="_blank" rel="noopener noreferrer" aria-label="ڤەکرنا نەخشەیێ: تایێ دووێ">
           <span class="branch-location" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
           <div class="branch-copy kurdish">
             <h3>تایێ دووێ</h3>
             <p class="branch-address">دهوک - زەریلاند بەرامبەر مزگەفتا صباح ملحم</p>
           </div>
-        </article>
+        </a>
       </div>
     </section>
 
@@ -181,6 +183,43 @@
       whatsapp: "https://wa.me/9647517259458",
       phone: "0751 725 9458"
     };
+
+    // Open the actual branch pin, rather than a marker-free map centered on it.
+    // On Google Maps, the place URL requests close zoom while selecting a location.
+    // Apple Maps' /place URL displays a named pin; Maps chooses the final camera zoom.
+    const branchMapZoom = 18;
+    const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const iOSVersion = navigator.userAgent.match(/OS (\d+)_(\d+)/);
+    const useLegacyAppleLink = iOSVersion &&
+      (Number(iOSVersion[1]) < 18 ||
+       (Number(iOSVersion[1]) === 18 && Number(iOSVersion[2]) < 4));
+    document.querySelectorAll('.branch-card[data-map-query]').forEach(card => {
+      const address = card.dataset.mapQuery;
+      const coordinates = card.dataset.mapCoordinates;
+      if (coordinates && card.dataset.mapLabel === 'Milla Jan Bazar - Baghera') {
+        // A coordinate query places a visible pin; the zoom value requests a street-level view.
+        card.href = isAppleMobile
+          ? 'https://maps.apple.com/?ll=' + encodeURIComponent(coordinates) +
+            '&q=' + encodeURIComponent(card.dataset.mapLabel) + '&z=' + branchMapZoom
+          : 'https://www.google.com/maps?q=' + encodeURIComponent(coordinates) +
+            '&z=' + branchMapZoom;
+      } else if (coordinates) {
+        // Keep the working Dohuk branch mapping unchanged.
+        card.href = isAppleMobile
+          ? (useLegacyAppleLink
+              ? 'https://maps.apple.com/?ll=' + encodeURIComponent(coordinates) +
+                '&q=' + encodeURIComponent(coordinates) + '&z=' + branchMapZoom
+              : 'https://maps.apple.com/place?coordinate=' + encodeURIComponent(coordinates) +
+                '&name=' + encodeURIComponent(card.dataset.mapLabel || 'Milla Jan Bazar'))
+          : 'https://www.google.com/maps/place/' + coordinates +
+            '/@' + coordinates + ',' + branchMapZoom + 'z';
+      } else {
+        card.href = isAppleMobile
+          ? 'https://maps.apple.com/?q=' + encodeURIComponent(address)
+          : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address);
+      }
+    });
 
     function applySocialLink(id, url) {
       const el = document.getElementById(id);
